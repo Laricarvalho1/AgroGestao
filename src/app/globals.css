@@ -4,8 +4,11 @@
   --background: #ffffff;
   --foreground: #171717;
 
-  --primary: #1b5e20;
-  --secondary: #e66100;
+  --primary: #1b5e20; /*rgb(27,94,32)*/
+  --secondary: #e66100; /*rgb(246,102,00)*/
+
+  --lighter-primary: #288d30;
+  --lighter-secondary: #ff9900;
 
   --darker-primary: #0d2e0f;
   --darker-secondary: #7b3000;
@@ -17,6 +20,10 @@
 
   --color-primary: var(--primary);
   --color-secondary: var(--secondary);
+
+  --color-lighter-primary: var(--lighter-primary);
+  --color-lighter-secondary: var(--lighter-secondary);
+
   --color-darker-primary: var(--darker-primary);
   --color-darker-secondary: var(--darker-secondary);
 

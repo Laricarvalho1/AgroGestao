@@ -39,7 +39,7 @@ export default function Register() {
     <div className="flex min-h-full flex-col bg-neutral-100 px-6 py-7 sm:px-10 lg:px-12">
       <header className="mb-6 flex items-center justify-between gap-3 border-b border-neutral-200 pb-4 text-sm text-neutral-500">
         <Link href="/" className="hover:text-primary">
-          ← Voltar à página inicial
+          Voltar à página inicial
         </Link>
         <span>Etapa 1 de 2: Credenciais Corporativas</span>
       </header>
@@ -214,20 +214,20 @@ export default function Register() {
             <AgButton>Finalizar Cadastro →</AgButton>
           </div>
 
-          <p className="my-6 text-center text-md text-neutral-500">
+          <p className="my-6 text-center text-sm text-neutral-500">
             Já possui conta?{" "}
             <Link
               href="/auth/login"
               className="font-semibold text-orange-700 hover:text-orange-600"
             >
-              Voltar ao Login →
+              Ir para Login
             </Link>
           </p>
         </form>
       </main>
       <footer className="mt-5 flex flex-col justify-between gap-3 border-t border-neutral-200 pt-5 text-sm leading-relaxed text-neutral-400 sm:flex-row">
         <div>
-          <p>© 2026 AgroGestão · Sistema Centralizado de Gestão Agrícola</p>
+          <p>© 2026 AgroGestão · AgroGestão</p>
           <p>Todos os direitos reservados · Conformidade com a LGPD</p>
         </div>
         <div className="flex gap-4">

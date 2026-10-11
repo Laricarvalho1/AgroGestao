@@ -19,6 +19,8 @@ export default function Login() {
 
   function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
+
+    // Integrar com a API de login.
   }
 
   return (
@@ -50,7 +52,7 @@ export default function Login() {
                 key={op.id}
                 type="button"
                 onClick={() => setOptionSelected(op.id)}
-                className={`flex-1 rounded-md px-2 py-2 text-sm transition ${
+                className={`flex-1 cursor-pointer rounded-md px-2 py-2 text-sm transition ${
                   optionSelected === op.id
                     ? "bg-white font-semibold text-primary shadow-sm"
                     : "text-neutral-600 hover:bg-neutral-200"
