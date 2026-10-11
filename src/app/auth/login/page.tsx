@@ -1,5 +1,7 @@
 "use client";
 
+/*eslint-disable-next-line tailwindcss/no-contradicting-classname*/
+
 import { useState } from "react";
 import Link from "next/link";
 
@@ -13,6 +15,7 @@ export default function Login() {
   const [optionSelected, setOptionSelected] = useState<string>("");
   const [acessKey, setAcessKey] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [remember, setRemember] = useState<boolean>(false);
 
   function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
@@ -42,17 +45,19 @@ export default function Login() {
             );
           })}
         </div>
+
         <label className="mt-4 px-1">E-mail ou ID de acesso</label>
         <input
-          type="text"
+          type="email"
           className="border border-neutral-200 py-2 px-5 rounded-xl focus:outline-primary focus:outline-2"
           placeholder="operacoes.campo@agrogestao.com.br"
           value={acessKey}
           onChange={(e) => setAcessKey(e.target.value.trim())}
         />
+
         <label className="mt-4 px-1">Senha Corporativa</label>
         <input
-          type="text"
+          type="password"
           className="border border-neutral-200 py-2 px-5 rounded-xl focus:outline-primary focus:outline-2"
           placeholder="**********"
           value={password}
@@ -62,8 +67,11 @@ export default function Login() {
         <div className="flex mt-2 justify-between">
           <div className="flex gap-1">
             <input
-              type="checkbox"
               className="bg-neutral-200 cursor-pointer p-2 accent-primary"
+              type="checkbox"
+              onClick={() =>
+                remember ? setRemember(false) : setRemember(true)
+              }
             />
             <label className="text-sm text-primary">Lembrar-me</label>
           </div>
@@ -73,7 +81,7 @@ export default function Login() {
           </button>
         </div>
 
-        <button className="bg-primary cursor-pointer text-white my-5 py-3 rounded-xl">
+        <button className="cursor-pointer text-white my-5 py-3 rounded-xl active:bg-darker-primary bg-primary">
           Entrar no Sistema
         </button>
 
