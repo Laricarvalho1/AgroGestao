@@ -3,21 +3,22 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --primary: #1b5e20;
+  --secondary: #e66100;
+  --tertiary: #2e7d32;
+  --neutral: #212121;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-tertiary: var(--tertiary);
+  --color-neutral: --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-round: "Quicksand", sans-serif;
 }
-
-/* @media (prefers-color-scheme: dark) { */
-/*   :root { */
-/*     --background: #0a0a0a; */
-/*     --foreground: #ededed; */
-/*   } */
-/* } */
 
 body {
   background: var(--background);
