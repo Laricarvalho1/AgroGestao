@@ -28,6 +28,12 @@ Agora, com o editor de texto de sua preferência, abra o `.env` e configure a co
 DATABASE_URL=postgres://[usuário]:[senha]@[ip]:[port]/[nome_do_banco]
 ```
 
+Para as tabelas serem aplicadas no banco de dados rode:
+
+```bash
+npm run push:db
+```
+
 ### 3. Instale as dependências
 
 ```bash
