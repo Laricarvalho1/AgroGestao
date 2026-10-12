@@ -2,16 +2,30 @@
 
 ## Como instalar e rodar ambiente de desenvolvimento
 
-### 1. Primeiro baixe o repositório
+### 1. Clone o repositório em sua máquina
 
 ```bash
 git clone https://github.com/Laricarvalho1/AgroGestao
 ```
 
-### 2. Então acesse o diretório do projeto
+Então acesse o diretório:
 
 ```bash
 cd AgroGestao
+```
+
+### 2. Configure banco de dados
+
+Copie o template de varáveis de ambiente
+
+```bash
+cp .env.example .env
+```
+
+Agora, com o editor de texto de sua preferência, abra o `.env` e configure a connection string do Postgres seguindo o modelo indicado no arquivo, algo como:
+
+```
+DATABASE_URL=postgres://[usuário]:[senha]@[ip]:[port]/[nome_do_banco]
 ```
 
 ### 3. Instale as dependências
