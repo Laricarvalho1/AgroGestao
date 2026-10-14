@@ -2,24 +2,34 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import * as api from "@/lib/api";
 
 import AgButton from "@/components/AgButton";
+import { UserRole } from "@/types/user";
 
 export default function Register() {
-  const [farmName, setFarmName] = useState("");
-  const [responsibleName, setResponsibleName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordConfirmation, setPasswordConfirmation] = useState("");
-  const [role, setRole] = useState("");
+  const [farmName, setFarmName] = useState<string>("");
+  const [responsibleName, setResponsibleName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState<string>("");
+  const [role, setRole] = useState<UserRole | undefined>("OPERATOR");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-  function handleSubmit(event: React.SubmitEvent) {
+  async function handleSubmit(event: React.SubmitEvent) {
     event.preventDefault();
 
     if (password !== passwordConfirmation) return;
+    if (role == undefined) return;
 
-    // Integrar com a API de cadastro.
+    const payload = api.createUser({
+      name: responsibleName,
+      email,
+      password,
+      role,
+    });
+
+    console.log(payload);
   }
 
   const strength = [
@@ -106,16 +116,15 @@ export default function Register() {
                 id="role"
                 className={inputClass}
                 value={role}
-                onChange={(e) => setRole(e.target.value)}
+                onChange={(e) => setRole(e.target.value as UserRole)}
                 required
               >
                 <option value="" disabled>
                   Selecione seu cargo
                 </option>
-                <option value="owner">Proprietário</option>
-                <option value="manager">Gerente agrícola</option>
-                <option value="operator">Operador</option>
-                <option value="technician">Técnico agrícola</option>
+                <option value="ADMIN">Gerente agrícola</option>
+                <option value="OPERATOR">Operador</option>
+                <option value="FIELD_MANAGER">Técnico agrícola</option>
               </select>
             </div>
 
