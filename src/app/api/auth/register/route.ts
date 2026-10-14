@@ -10,16 +10,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const userInput = params.user;
 
   const hashedPassword = await bcrypt.hash(userInput.password, salt);
+  const createdUser = await createUser(userInput, hashedPassword);
 
-  try {
-    const createdUser = await createUser(userInput, hashedPassword);
-    const { password_hash, ...responseUser } = createdUser;
-
-    return NextResponse.json(responseUser as PublicUser);
-  } catch {
+  if (!createdUser)
     return NextResponse.json(
       { error: "Email already registered" },
       { status: 500 },
     );
-  }
+
+  const { password_hash, ...responseUser } = createdUser;
+
+  return NextResponse.json(responseUser as PublicUser, { status: 201 });
 }

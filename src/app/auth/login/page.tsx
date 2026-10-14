@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import AgButton from "@/components/AgButton";
+import * as api from "@/lib/api";
 
 export default function Login() {
   const options = [
@@ -17,10 +18,12 @@ export default function Login() {
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  function handleSubmit(e: React.SubmitEvent) {
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
 
-    // Integrar com a API de login.
+    //A posteriori usar esse payload para contexto global do usuário logado
+    const payload = await api.login({ email: acessKey, password });
+    //Aqui esta criando token mas no momento o remember é inutil
   }
 
   return (

@@ -19,4 +19,9 @@ export interface CreateUserInput {
   role: UserRole;
 }
 
+export interface LoginUser {
+  email: string;
+  password: string;
+}
+
 export type PublicUser = Omit<User, "password_hash">;

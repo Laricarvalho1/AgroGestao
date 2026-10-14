@@ -6,6 +6,7 @@ import * as api from "@/lib/api";
 
 import AgButton from "@/components/AgButton";
 import { UserRole } from "@/types/user";
+import { redirect } from "next/navigation";
 
 export default function Register() {
   const [farmName, setFarmName] = useState<string>("");
@@ -22,14 +23,16 @@ export default function Register() {
     if (password !== passwordConfirmation) return;
     if (role == undefined) return;
 
-    const payload = api.createUser({
+    const payload = await api.createUser({
       name: responsibleName,
       email,
       password,
       role,
     });
 
-    console.log(payload);
+    if (!payload.ok) return;
+
+    redirect("/auth/login");
   }
 
   const strength = [
