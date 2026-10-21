@@ -1,23 +1,28 @@
-import { CreateUserInput, User } from "@/types/user";
-
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
 import * as schema from "./schema";
+import { UserDatabaseRow } from "@/modules/users/user.entity";
+import { RegisterUserDTO } from "@/modules/users/register-user.dto";
 
 export async function createUser(
-  user: CreateUserInput,
+  user: RegisterUserDTO,
   password_hash: string,
-): Promise<User> {
+): Promise<UserDatabaseRow> {
   return (
     await db
       .insert(schema.userTable)
-      .values({ ...user, password_hash })
+      .values({
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        password_hash,
+      })
       .returning()
   )[0];
 }
 
-export async function getUserByEmail(email: string): Promise<User> {
+export async function getUserByEmail(email: string): Promise<UserDatabaseRow> {
   return (
     await db
       .select()

@@ -1,6 +1,7 @@
-import { CreateUserInput, LoginUser } from "@/types/user";
+import { LoginUserDTO } from "@/modules/users/login-user.dto";
+import { RegisterUserDTO } from "@/modules/users/register-user.dto";
 
-export async function createUser(user: CreateUserInput) {
+export async function createUser(user: RegisterUserDTO) {
   const payload = await fetch("/api/auth/register", {
     method: "POST",
     body: JSON.stringify({
@@ -10,7 +11,7 @@ export async function createUser(user: CreateUserInput) {
   return payload;
 }
 
-export async function login(loginInput: LoginUser) {
+export async function login(loginInput: LoginUserDTO) {
   const payload = await fetch("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({

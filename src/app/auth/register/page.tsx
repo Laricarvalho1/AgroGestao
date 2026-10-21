@@ -5,8 +5,8 @@ import { useState } from "react";
 import * as api from "@/lib/api";
 
 import AgButton from "@/components/AgButton";
-import { UserRole } from "@/types/user";
 import { redirect } from "next/navigation";
+import { UserRole } from "@/modules/users/user.entity";
 
 export default function Register() {
   const [farmName, setFarmName] = useState<string>("");
