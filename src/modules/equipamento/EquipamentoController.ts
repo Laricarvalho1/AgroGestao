@@ -1,0 +1,140 @@
+import { EquipamentoService } from "./EquipamentoService";
+import { NextRequest, NextResponse } from "next/server";
+
+export class EquipamentoController {
+    
+    private equipamentoService = new EquipamentoService();
+    
+    async buscarTodos() {
+       
+        try{
+            const todosEquipamentos = await this.equipamentoService.buscarTodos();
+            
+            return NextResponse.json(todosEquipamentos.map(equipamento => equipamento.getTodasInformacoes()));
+
+        }catch(erro){
+            console.error(erro)
+            return NextResponse.json({erro : "Erro interno no servidor."}, {status : 500});
+        }
+
+    }
+
+    async buscarPorId(id: number){
+
+        try{
+            const equipamento = await this.equipamentoService.buscarPorId(Number(id))
+
+            return NextResponse.json(equipamento.getTodasInformacoes());
+
+        }catch(erro){
+
+            if(erro instanceof Error && erro.message === "Equipamento não encontrado."){
+                return NextResponse.json({erro : erro.message},{status : 404})
+            };
+
+            console.error(erro)
+
+            return NextResponse.json({erro : "Erro interno no servidor."}, {status : 500});
+        }
+    }
+
+    async criar(req: NextRequest){
+
+
+        try{
+
+            const dados = await req.json();
+
+            // verifica se os dados enviados pelo front estão no formato correto antes de chamar o service
+            if (dados === null || typeof dados !== "object" ||Array.isArray(dados)) {
+                return NextResponse.json({ erro: "Dados do equipamento inválidos." },{ status: 400 });
+            }
+
+            const equipamento = await this.equipamentoService.criar(dados)
+
+            return NextResponse.json(equipamento.getTodasInformacoes(), {status : 201});
+
+        }catch(erro){
+
+            // verifica se ocorreu algum erro na escrita do JSON enviado pelo front
+            if (erro instanceof SyntaxError) {
+                return NextResponse.json({ erro: "JSON malformado." },{ status: 400 });
+            }
+            // identifica os erros de validação e retorna o código 400 para o front
+            if(erro instanceof Error && 
+            [ 
+                "A identificação do equipamento é inválida.", 
+                "O horímetro não pode ser negativo ou inválido.",
+                "Status do equipamento inválido."
+            ].includes(erro.message)){
+                return NextResponse.json({erro : erro.message}, {status : 400})
+            }
+
+            console.error(erro)
+            return NextResponse.json({erro : "Erro interno no servidor."}, {status : 500});
+
+        }
+    }
+
+    async atualizar(id: number, req: NextRequest){
+
+        try{
+            
+            const dados = await req.json()
+
+            // verifica se os dados enviados pelo front estão no formato correto antes de chamar o service
+            if (dados === null || typeof dados !== "object" ||Array.isArray(dados)) {
+                return NextResponse.json({ erro: "Dados do equipamento inválidos." },{ status: 400 });
+            }
+
+            const equipamento = await this.equipamentoService.atualizar(id, dados)
+
+            return NextResponse.json(equipamento.getTodasInformacoes(), {status : 200})
+
+        }catch(erro){
+
+            // verifica se ocorreu algum erro na escrita do JSON enviado pelo front
+            if (erro instanceof SyntaxError) {
+
+                return NextResponse.json({ erro: "JSON malformado." },{ status: 400 });
+                
+            }
+            // identifica os erros de validação e retorna o código 400 para o front
+            if(erro instanceof Error && [
+                "A identificação do equipamento é inválida.",
+                "O horímetro não pode ser negativo ou inválido.",
+                "O horímetro não pode ser menor que o anterior.",
+                "Status do equipamento inválido."
+            ].includes(erro.message)){
+                return NextResponse.json({erro : erro.message}, {status : 400})
+            };
+
+            if(erro instanceof Error && erro.message === "Equipamento não encontrado."){
+                return NextResponse.json({erro : erro.message},{status : 404})
+            };
+
+
+            console.error(erro)
+            return NextResponse.json({erro : "Erro interno no servidor."}, {status : 500});
+        }
+    }
+
+    async excluir(id : number){
+
+        try{
+            await this.equipamentoService.excluir(Number(id))
+
+            return new NextResponse(null, {status : 204});
+
+        }catch(erro){
+            
+            if(erro instanceof Error && erro.message === "Equipamento não encontrado."){
+                return NextResponse.json({erro : erro.message},{status : 404})  
+            };
+
+            console.error(erro)
+            return NextResponse.json({erro : "Erro interno no servidor."}, {status : 500});
+        }
+    }
+
+}

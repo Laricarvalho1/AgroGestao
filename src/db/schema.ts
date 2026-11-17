@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, timestamp, uuid, varchar, serial, numeric } from "drizzle-orm/pg-core";
 import { v7 } from "uuid";
 
 export const role = pgEnum("user_role_enum", [
@@ -15,4 +15,11 @@ export const userTable = pgTable("users", {
   role: role().notNull(),
   created_at: timestamp().notNull().defaultNow(),
   updated_at: timestamp().notNull().defaultNow(),
+});
+
+export const equipamentoTable = pgTable("tb_equipamentos",{
+  id : serial("id").primaryKey(),
+  identificacao : varchar("identificacao", {length : 100}).notNull(),
+  horimetroAtual : numeric("horimetro_atual",{precision : 10, scale : 2}).notNull(),
+  status : varchar("status", {length: 30, enum : ["DISPONIVEL", "INDISPONIVEL"]}).notNull()
 });
