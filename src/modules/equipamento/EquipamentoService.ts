@@ -23,15 +23,47 @@ export class EquipamentoService {
         return equipamento;
     }
 
-    async criar(dados : {identificacao: string; horimetroAtual: number; status:  EquipamentoStatusEnum;}){
+    async criar(dados: {
+        identificacao: string;
+        horimetroAtual: number;
+        marca: string;
+        modelo: string;
+        anoFabricacao: number;
+        categoria: string;
+        intervaloManutencao: number;
+        propriedadeId: number;}){
 
         // cria uma instância do equipamento sem id, validando os atributos antes de salvar no banco
-        const equipamento = new Equipamento(null,dados.identificacao,dados.horimetroAtual,dados.status);
+        const equipamento = new Equipamento(
+            null,
+            dados.identificacao,
+            dados.horimetroAtual,
+            EquipamentoStatusEnum.DISPONIVEL,
+            dados.marca,
+            dados.modelo,
+            dados.anoFabricacao,
+            dados.categoria,
+            dados.intervaloManutencao,
+            dados.propriedadeId
+        );
+        // verifica se a identificação já existe nessa propriedade
+        const equipamentoExistente = await this.equipamentoRepository.buscarPorIdentificacao(equipamento.getIdentificacao(), equipamento.getPropriedadeId());
+
+        if (equipamentoExistente) {
+            throw new Error("Já existe um equipamento com essa identificação na propriedade.");
+        }
 
         return await this.equipamentoRepository.salvar(equipamento);
     }
 
-    async atualizar(id : number, dados : {identificacao?: string; horimetroAtual?: number; status?: EquipamentoStatusEnum;}){
+    async atualizar(id: number, dados: {
+        identificacao?: string;
+        horimetroAtual?: number;
+        marca?: string;
+        modelo?: string;
+        anoFabricacao?: number;
+        categoria?: string;
+        intervaloManutencao?: number;}){
         
         // controla se algum atributo do equipamento foi realmente alterado
         let houveAlteracao = false;
@@ -43,18 +75,49 @@ export class EquipamentoService {
         if (dados.identificacao !== undefined && dados.identificacao !== equipamento.getIdentificacao()){
 
             equipamento.alterarIdentificacao(dados.identificacao);
-            houveAlteracao = true;
 
+            const equipamentoExistente = await this.equipamentoRepository.buscarPorIdentificacao(equipamento.getIdentificacao(),equipamento.getPropriedadeId());
+
+            if (equipamentoExistente && equipamentoExistente.getId() !== equipamento.getId()) {
+                throw new Error("Já existe um equipamento com essa identificação na propriedade.");
+            }
+
+            houveAlteracao = true;
         }
+
         if (dados.horimetroAtual !== undefined && dados.horimetroAtual !== equipamento.getHorimetroAtual()){
 
             equipamento.atualizarHorimetro(dados.horimetroAtual);
-            houveAlteracao = true;;
-            
+            houveAlteracao = true;
         }
-        if (dados.status !== undefined && dados.status !== equipamento.getStatus()){
 
-            equipamento.alterarStatus(dados.status);
+        if (dados.marca !== undefined && dados.marca !== equipamento.getMarca()) {
+
+            equipamento.alterarMarca(dados.marca);
+            houveAlteracao = true;
+        }
+
+        if (dados.modelo !== undefined && dados.modelo !== equipamento.getModelo()) {
+
+            equipamento.alterarModelo(dados.modelo);
+            houveAlteracao = true;
+        }
+
+        if (dados.anoFabricacao !== undefined && dados.anoFabricacao !== equipamento.getAnoFabricacao()) {
+
+            equipamento.alterarAnoFabricacao(dados.anoFabricacao);
+            houveAlteracao = true;
+        }
+
+        if (dados.categoria !== undefined && dados.categoria !== equipamento.getCategoria()) {
+
+            equipamento.alterarCategoria(dados.categoria);
+            houveAlteracao = true;
+        }
+
+        if (dados.intervaloManutencao !== undefined && dados.intervaloManutencao !== equipamento.getIntervaloManutencao()) {
+
+            equipamento.alterarIntervaloManutencao(dados.intervaloManutencao);
             houveAlteracao = true;
         }
         
