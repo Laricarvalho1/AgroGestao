@@ -3,7 +3,7 @@ import { FiAlertTriangle, FiPlus, FiSliders, FiTrash2, FiLock, FiDollarSign, FiL
 import { LiaChevronUpSolid } from "react-icons/lia";
 import { useState } from "react";
 
-type StatusDoInsumo = "Normal" | "Reposição Necessária Baixo" | "Bloqueado";
+type StatusDoInsumo = "Normal" | "Reposição Necessária" | "Bloqueado";
 
 interface Insumo {
     nome_do_insumo: string;
@@ -14,6 +14,7 @@ interface Insumo {
     custo_medio: number;
     valor_total: number;
     status: StatusDoInsumo;
+    estoque_min: number;
     id: number;
 }
 
@@ -27,7 +28,8 @@ interface Insumo {
         unidade: "kg",
         custo_medio: 12.50,
         valor_total: 1875,
-        status: "Regular",
+        status: "Normal",
+        estoque_min: 100,
         id: 1
     },
     {
@@ -38,7 +40,8 @@ interface Insumo {
         unidade: "kg",
         custo_medio: 25.00,
         valor_total: 250,
-        status: "Estoque baixo",
+        status: "Reposição Necessária",
+        estoque_min: 50,
         id: 2
     },
     {
@@ -49,7 +52,8 @@ interface Insumo {
         unidade: "L",
         custo_medio: 45.00,
         valor_total: 3600,
-        status: "Regular",
+        status: "Normal",
+        estoque_min: 30,
         id: 3
     },
 ];
@@ -59,12 +63,61 @@ interface Insumo {
 export default function EstoqueDeInsumos() {
     const [busca, setBusca] = useState("");
     const[categoria, setCategoria] = useState("Todos");
+    const[status, setStatus] = useState("Todos os status")
 
-    const filtrados = insumos.filter(insumo =>
-        insumo.nome_do_insumo.toLowerCase().includes(busca.toLowerCase()) && (categoria === "Todos" || insumo.categoria === categoria)
+    //array com novos insumos registrados
+    const[lista_insumos, setInsumo] = useState<Insumo[]>(insumos);
+
+    const filtrados = lista_insumos.filter(insumo =>
+        insumo.nome_do_insumo.toLowerCase().includes(busca.toLowerCase()) &&
+         (categoria === "Todos" || insumo.categoria === categoria) &&
+         (status === "Todos os status" || insumo.status === status )
     );
 
     const[modal_aberto, setAberto] = useState(false);
+
+    const[form_modal, setFormulario] = useState({
+        nome_do_insumo: "",
+        categoria: "",
+        unidade: "",
+        estoque_min: ""
+    });
+
+ 
+
+
+    function limparFormulario() {
+        setFormulario({
+            nome_do_insumo: "",
+            categoria: "",
+            unidade: "",
+            estoque_min: ""
+        });
+        setAberto(false);
+}
+
+    //funcao que cadastra novos insumos
+    function cadastrarInsumo(x: React.FormEvent<HTMLFormElement>) {
+        x.preventDefault();
+        if (form_modal.nome_do_insumo.trim() === "") {
+            return;
+        }
+
+        const novoInsumo: Insumo = {
+            id: Date.now(),
+            ...form_modal,
+            estoque_min: Number(form_modal.estoque_min),
+
+            lote: "",
+            saldo: 0,
+            custo_medio: 0,
+            valor_total: 0,
+            status: "Normal"
+        };
+
+        setInsumo(antigos => [...antigos, novoInsumo]);
+        limparFormulario();
+    }
 
     return (
         <main className="min-h-screen min-w-0 bg-[#f8f7f6] px-4 py-6 text-[#202820] sm:px-6 lg:px-8">
@@ -83,12 +136,60 @@ export default function EstoqueDeInsumos() {
                         
                          {modal_aberto && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                    <div className="rounded-xl bg-white p-6">
-                        <h2>Novo insumo</h2>
+                    <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
+                        <h2 className="text-xl font-semibold text-green-900 mb-6">Novo insumo</h2>
 
-                        <button onClick={() => setAberto(false)}>
-                            Fechar
-                        </button>
+                        
+                        <form onSubmit={cadastrarInsumo} className="flex flex-col gap-4">
+
+                            <div className="flex flex-col gap-1">
+                                <label htmlFor="nome_do_insumo" className="text-sm font-medium text-gray-700" >Nome do Insumo</label>
+                                <input type="text" required id="nome_do_insumo" className="flex flex-col gap-1 w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-green-700 focus:ring-2 focus:ring-green-100" value={form_modal.nome_do_insumo} onChange={x => setFormulario({...form_modal, nome_do_insumo: x.target.value})}></input>
+                            </div>
+                            
+                            
+
+                            <div className="flex flex-col gap-1">
+                                <label htmlFor="categoria" className="text-sm font-medium text-gray-700" >Selecione a Categoria</label>
+                                <select id="categoria" required className="flex flex-col gap-1 w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-green-700 focus:ring-2 focus:ring-green-100" value={form_modal.categoria} onChange={x => setFormulario({...form_modal, categoria: x.target.value})}>
+                                    <option value="" disabled>Selecione uma categoria</option>
+                                    <option>Defensivos</option>
+                                    <option>Fertilizantes</option>
+                                    <option>Sementes</option>
+                                    <option>Adjuvantes</option>
+                                </select>
+                            </div>
+                            
+
+                            <div className="flex flex-col gap-1">
+                                <label htmlFor="unidade" className="text-sm font-medium text-gray-700" >Selecione a Unidade</label>
+                                 <select id="unidade" required className="flex flex-col gap-1 w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-green-700 focus:ring-2 focus:ring-green-100" value={form_modal.unidade} onChange={x => setFormulario({...form_modal, unidade: x.target.value})} >
+                                    <option value="" disabled>Selecione uma unidade</option>
+                                    <option>kg</option>
+                                    <option>L</option>
+                                    <option>sc</option>
+                                </select>
+                            </div>
+                            
+
+                            <div className="flex flex-col gap-1">
+                                <label htmlFor="estoque_min" className="text-sm font-medium text-gray-700" >Estoque Minimo: </label>
+                                <input type="number" min={0} required id="estoque_min" className="flex flex-col gap-1 w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-green-700 focus:ring-2 focus:ring-green-100 " value={form_modal.estoque_min} onChange={x => setFormulario({...form_modal, estoque_min: x.target.value})}></input>
+                            </div>
+                           
+                            
+                            
+
+                            <div className="flex justify-end gap-3 border-t border-gray-200 pt-4 mt-2">
+
+                                <button type="button" onClick={() => limparFormulario()} className=" bg-red-800 text-white rounded-lg border border-gray-300 px-5 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">Cancelar</button>
+                                <button type="submit" className="rounded-lg bg-green-800 px-5 py-2 font-medium text-white hover:bg-green-900 cursor-pointer">Salvar</button>
+                            </div>
+                        
+                        </form>
+
+
+                       
                     </div>
                 </div>
             )}
@@ -162,7 +263,7 @@ export default function EstoqueDeInsumos() {
                             <input aria-label="Buscar insumo" placeholder="Buscar por nome ou lote..." className="min-w-0 flex-1 rounded-lg border border-[#bdc7b9] bg-white px-3 py-2 text-sm outline-none focus:border-primary sm:max-w-xs" value={busca} onChange={x => setBusca(x.target.value)}/>
 
                             <label htmlFor="status" className="text-sm">Status:</label>
-                            <select id="status" className="rounded-lg border border-[#bdc7b9] bg-white px-3 py-2 text-sm">
+                            <select id="status" value={status} onChange={x => setStatus(x.target.value)} className="rounded-lg border border-[#bdc7b9] bg-white px-3 py-2 text-sm">
                                 <option>Todos os status</option><option>Normal</option><option>Reposição necessária</option><option>Bloqueado</option>
                             </select>
                             <button type="button" aria-label="Exportar catálogo" className="rounded-lg border border-[#bdc7b9] bg-white p-2"><FiDownload /></button>
