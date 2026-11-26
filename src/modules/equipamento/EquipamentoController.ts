@@ -155,13 +155,25 @@ export class EquipamentoController {
         }catch(erro){
 
             if(erro instanceof Error && erro.message === "Equipamento não encontrado."){
-                return NextResponse.json({erro : erro.message},{status : 404})  
+                return NextResponse.json({erro : erro.message},{status : 404})
             };
+
+            // impede excluir equipamento que possui uma ordem de serviço vinculada
+            if (
+                erro instanceof Error &&
+                erro.cause instanceof Error &&
+                "code" in erro.cause &&
+                erro.cause.code === "23503"
+            ) {
+                return NextResponse.json(
+                    {erro: "Não é possível excluir um equipamento com ordens de serviço vinculadas."},
+                    {status: 409}
+                );
+            }
 
             console.error(erro)
             return NextResponse.json({erro : "Erro interno no servidor."}, {status : 500});
         }
 
     }
-
 }
