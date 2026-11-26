@@ -1,10 +1,37 @@
-import { pgEnum, pgTable, timestamp, uuid, varchar, serial, numeric, integer, date, text, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  numeric,
+  integer,
+  date,
+  text,
+  uniqueIndex,
+  pgEnum,
+  pgTable,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { v7 } from "uuid";
 
 export const role = pgEnum("user_role_enum", [
   "ADMIN",
   "FIELD_MANAGER",
   "OPERATOR",
+]);
+
+export const equipmentStatusEnum = pgEnum("equipment_status_enum", [
+  "AVAILABLE",
+  "UNAVAILABLE",
+]);
+
+export const serviceOrderStatusEnum = pgEnum("service_order_status_enum", [
+  "OPEN",
+  "IN_MAINTENANCE",
+  "COMPLETED",
+]);
+
+export const financialEntryTypeEnum = pgEnum("financial_entry_type_enum", [
+  "INCOME",
+  "EXPENSE",
 ]);
 
 export const userTable = pgTable("users", {
@@ -17,41 +44,94 @@ export const userTable = pgTable("users", {
   updated_at: timestamp().notNull().defaultNow(),
 });
 
-export const equipamentoTable = pgTable("tb_equipamentos",{
-  id : serial("id").primaryKey(),
-  identificacao : varchar("identificacao", {length : 100}).notNull(),
-  horimetroAtual : numeric("horimetro_atual",{precision : 10, scale : 2}).notNull(),
-  status : varchar("status", {length: 30, enum : ["DISPONIVEL", "INDISPONIVEL"]}).notNull(),
-  marca: varchar("marca", { length: 100 }).notNull(),
-  modelo: varchar("modelo", { length: 100 }).notNull(),
-  anoFabricacao: integer("ano_fabricacao").notNull(),
-  categoria: varchar("categoria", { length: 100 }).notNull(),
-  intervaloManutencao: numeric("intervalo_manutencao", {precision: 10,scale: 2}).notNull(),
-  propriedadeId: integer("propriedade_id").notNull().references(() => propriedadeTable.id),});
+export const propertiesTable = pgTable("properties", {
+  id: uuid().$defaultFn(v7).primaryKey(),
+  name: varchar({ length: 150 }).notNull(),
+  location: varchar({ length: 255 }),
+  total_area_hectares: numeric({ precision: 10, scale: 2 }).notNull(),
+  created_at: timestamp().notNull().defaultNow(),
+  updated_at: timestamp().notNull().defaultNow(),
+});
 
-export const contratoVendaTable = pgTable("contrato_Venda", {
-  id : serial("id").primaryKey(),
-  comprador : varchar("comprador", {length : 150}).notNull(),
-  valorTotal : numeric("valor_total", {precision : 10, scale : 2}).notNull(),
-  safraId : integer("safra_id").notNull(),
-  status : varchar("status",{length : 20, enum : ["PENDENTE", "CONFIRMADO", "CANCELADO"]}).notNull().default("PENDENTE"),
-  propriedadeId: integer("propriedade_id").notNull(),
-  quantidade: numeric("quantidade", {precision: 14, scale: 3}).notNull(),
-  precoUnitario: numeric("preco_unitario", { precision: 14, scale: 4}).notNull(),
-  unidadeMedida: varchar("unidade_medida", { length: 20}).notNull(),
-  dataContrato: date("data_contrato", {mode: "string"}).notNull(),
-  condicaoPagamento: varchar("condicao_pagamento", {length: 100}).notNull(),
-  cpfCnpj: varchar("cpf_cnpj", {length: 18}),
-  contato: varchar("contato", {length: 150}),
-  justificativaCancelamento: text("justificativa_cancelamento")
-})
+export const harvestsTable = pgTable("harvests", {
+  id: uuid().$defaultFn(v7).primaryKey(),
+  plot_id: uuid().notNull(),
+  crop_id: uuid().notNull(),
+  start_date: timestamp().notNull(),
+  end_date: timestamp(),
+  expected_yield: numeric({ precision: 10, scale: 2 }),
+  status: varchar({ length: 30 }).notNull(),
+  created_at: timestamp().notNull().defaultNow(),
+  updated_at: timestamp().notNull().defaultNow(),
+});
 
-export const ordemServicoTable = pgTable("tb_ordens_servico", {
-  id: serial("id").primaryKey(),
-  equipamentoId: integer("equipamento_id").notNull().references(() => equipamentoTable.id),
-  tipoManutencao: varchar("tipo_manutencao", { length: 20, enum: ["PREVENTIVA", "CORRETIVA"] }).notNull(),
-  horimetro: numeric("horimetro", { precision: 10, scale: 2 }).notNull(),
-  descricao: text("descricao").notNull(),
-  status: varchar("status", { length: 20, enum: ["ABERTA", "ENCERRADA"] }).notNull().default("ABERTA"),
-  dataAbertura: timestamp("data_abertura").notNull().defaultNow(),
+export const equipmentsTable = pgTable("equipments", {
+  id: uuid().$defaultFn(v7).primaryKey(),
+  property_id: uuid()
+    .notNull()
+    .references(() => propertiesTable.id, { onDelete: "restrict" }),
+  identification: varchar({ length: 100 }).notNull(),
+  current_hour_meter: numeric({ precision: 10, scale: 2 })
+    .notNull()
+    .default("0.00"),
+  status: equipmentStatusEnum().notNull().default("AVAILABLE"),
+  // Campos de cadastro de Equipamento da Dupla 3
+  brand: varchar({ length: 100 }).notNull(),
+  model: varchar({ length: 100 }).notNull(),
+  manufacture_year: integer().notNull(),
+  category: varchar({ length: 100 }).notNull(),
+  maintenance_interval: numeric({ precision: 10, scale: 2 }).notNull(),
+  created_at: timestamp().notNull().defaultNow(),
+  updated_at: timestamp().notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("equipments_identification_property_unique").on(table.identification, table.property_id),
+]);
+
+export const serviceOrdersTable = pgTable("service_orders", {
+  id: uuid().$defaultFn(v7).primaryKey(),
+  equipment_id: uuid()
+    .notNull()
+    .references(() => equipmentsTable.id, { onDelete: "restrict" }),
+  // Campos de abertura e gerenciamento da OS da Dupla 3
+  maintenance_type: varchar({ length: 20, enum: ["PREVENTIVE", "CORRECTIVE"] }).notNull(),
+  hour_meter: numeric({ precision: 10, scale: 2 }).notNull(),
+  description: text().notNull(),
+  parts_cost: numeric({ precision: 10, scale: 2 }).notNull().default("0.00"),
+  labor_cost: numeric({ precision: 10, scale: 2 }).notNull().default("0.00"),
+  status: serviceOrderStatusEnum().notNull().default("OPEN"),
+  created_at: timestamp().notNull().defaultNow(),
+  updated_at: timestamp().notNull().defaultNow(),
+});
+
+export const financialEntriesTable = pgTable("financial_entries", {
+  id: uuid().$defaultFn(v7).primaryKey(),
+  property_id: uuid()
+    .notNull()
+    .references(() => propertiesTable.id, { onDelete: "restrict" }),
+  harvest_id: uuid().references(() => harvestsTable.id, {
+    onDelete: "set null",
+  }),
+  type: financialEntryTypeEnum().notNull(),
+  category: varchar({ length: 100 }).notNull(),
+  amount: numeric({ precision: 10, scale: 2 }).notNull(),
+  entry_date: timestamp().notNull().defaultNow(),
+  created_at: timestamp().notNull().defaultNow(),
+  updated_at: timestamp().notNull().defaultNow(),
+});
+
+export const salesContractsTable = pgTable("sales_contracts", {
+  id: uuid().$defaultFn(v7).primaryKey(),
+  buyer: varchar({ length: 150 }).notNull(),
+  total_amount: numeric({ precision: 10, scale: 2 }).notNull(),
+  harvest_id: uuid().notNull().references(() => harvestsTable.id, { onDelete: "restrict" }),
+  property_id: uuid().notNull().references(() => propertiesTable.id, { onDelete: "restrict" }),
+  status: varchar({ length: 20, enum: ["PENDING", "CONFIRMED", "CANCELLED"] }).notNull().default("PENDING"),
+  quantity: numeric({ precision: 14, scale: 3 }).notNull(),
+  unit_price: numeric({ precision: 14, scale: 4 }).notNull(),
+  unit: varchar({ length: 20 }).notNull(),
+  contract_date: date({ mode: "string" }).notNull(),
+  payment_terms: varchar({ length: 100 }).notNull(),
+  tax_id: varchar({ length: 18 }),
+  contact: varchar({ length: 150 }),
+  cancellation_reason: text(),
 });
