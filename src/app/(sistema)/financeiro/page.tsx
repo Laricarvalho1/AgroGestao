@@ -121,8 +121,7 @@ export default function FinanceiroPage() {
     .reduce((acc, item) => acc + item.amount, 0);
 
   return (
-    <main className="min-h-screen bg-[#F8F9FA] p-4 md:p-8">
-      <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
         <header>
           <h1 className="text-2xl font-bold text-gray-900">
             Lançamentos Financeiros
@@ -360,6 +359,5 @@ export default function FinanceiroPage() {
           )}
         </section>
       </div>
-    </main>
   );
 }

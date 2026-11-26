@@ -11,6 +11,7 @@ import {
   MdHome,
   MdInventory,
   MdMap,
+  MdAttachMoney,
   MdShoppingCart,
 } from "react-icons/md";
 
@@ -33,6 +34,7 @@ export const MENUS: Record<Perfil, ItemMenu[]> = {
     { rotulo: "Ordens de Serviço", href: "/ordens-servico", icone: MdBuild },
     { rotulo: "Fornecedores/Compras", href: "/compras", icone: MdShoppingCart },
     { rotulo: "Contratos/Vendas", href: "/contratos", icone: MdHandshake },
+    { rotulo: "Financeiro", href: "/financeiro", icone: MdAttachMoney },
     { rotulo: "DRE Operacional", href: "/dre", icone: MdBarChart },
   ],
   // Não definido nos documentos: confirmar com o grupo
