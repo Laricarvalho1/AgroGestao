@@ -1,12 +1,16 @@
 import { z } from "zod";
 import { FinancialEntry, FinancialEntryType } from "./financial-entry.entity";
+import { moneyAmountSchema } from "../shared/money.schema";
 
 export const createFinancialEntrySchema = z.object({
   property_id: z.string().uuid("Propriedade inválida"),
   harvest_id: z.string().uuid().optional().nullable(),
   type: z.enum(["INCOME", "EXPENSE"]).default("EXPENSE"),
   category: z.string().min(2, "Categoria obrigatória").max(100),
-  amount: z.coerce.number().positive("Valor deve ser maior que zero"),
+  amount: moneyAmountSchema.refine(
+    (value) => value > 0,
+    "Valor deve ser maior que zero",
+  ),
   entry_date: z.coerce.date().optional(),
 });
 
