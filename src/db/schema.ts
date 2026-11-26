@@ -1,4 +1,11 @@
-import { numeric, pgEnum, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  numeric,
+  pgEnum,
+  pgTable,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { v7 } from "uuid";
 
 export const role = pgEnum("user_role_enum", [
@@ -6,16 +13,6 @@ export const role = pgEnum("user_role_enum", [
   "FIELD_MANAGER",
   "OPERATOR",
 ]);
-
-export const userTable = pgTable("users", {
-  id: uuid().$defaultFn(v7).primaryKey(),
-  name: varchar({ length: 255 }).notNull(),
-  email: varchar({ length: 255 }).notNull().unique(),
-  password_hash: varchar({ length: 255 }).notNull(),
-  role: role().notNull(),
-  created_at: timestamp().notNull().defaultNow(),
-  updated_at: timestamp().notNull().defaultNow(),
-});
 
 export const equipmentStatusEnum = pgEnum("equipment_status_enum", [
   "AVAILABLE",
@@ -32,6 +29,16 @@ export const financialEntryTypeEnum = pgEnum("financial_entry_type_enum", [
   "INCOME",
   "EXPENSE",
 ]);
+
+export const userTable = pgTable("users", {
+  id: uuid().$defaultFn(v7).primaryKey(),
+  name: varchar({ length: 255 }).notNull(),
+  email: varchar({ length: 255 }).notNull().unique(),
+  password_hash: varchar({ length: 255 }).notNull(),
+  role: role().notNull(),
+  created_at: timestamp().notNull().defaultNow(),
+  updated_at: timestamp().notNull().defaultNow(),
+});
 
 export const propertiesTable = pgTable("properties", {
   id: uuid().$defaultFn(v7).primaryKey(),
@@ -60,7 +67,9 @@ export const equipmentsTable = pgTable("equipments", {
     .notNull()
     .references(() => propertiesTable.id, { onDelete: "restrict" }),
   identification: varchar({ length: 100 }).notNull(),
-  current_hour_meter: numeric({ precision: 10, scale: 2 }).notNull().default("0.00"),
+  current_hour_meter: numeric({ precision: 10, scale: 2 })
+    .notNull()
+    .default("0.00"),
   status: equipmentStatusEnum().notNull().default("AVAILABLE"),
   created_at: timestamp().notNull().defaultNow(),
   updated_at: timestamp().notNull().defaultNow(),
@@ -83,7 +92,9 @@ export const financialEntriesTable = pgTable("financial_entries", {
   property_id: uuid()
     .notNull()
     .references(() => propertiesTable.id, { onDelete: "restrict" }),
-  harvest_id: uuid().references(() => harvestsTable.id, { onDelete: "set null" }),
+  harvest_id: uuid().references(() => harvestsTable.id, {
+    onDelete: "set null",
+  }),
   type: financialEntryTypeEnum().notNull(),
   category: varchar({ length: 100 }).notNull(),
   amount: numeric({ precision: 10, scale: 2 }).notNull(),
