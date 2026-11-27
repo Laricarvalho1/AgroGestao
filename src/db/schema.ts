@@ -42,6 +42,10 @@ export const supplyCategoryEnum = pgEnum("supply_category_enum", [
   "CROP_PROTECTION" // defensivo
 ])
 
+export type SupplyCategory = (typeof supplyCategoryEnum.enumValues)[number];
+
+export type SupplySelect = typeof suppliesTable.$inferSelect;
+
 export const stockMovementTypeEnum = pgEnum("stock_movement_type_enum", [
   "PURCHASE_IN", // entrada compra
   "FIELD_APPLICATION_OUT", // saída manejo
@@ -54,6 +58,8 @@ export const supplyUnitEnum = pgEnum("supply_unit_enum", [
   "L",
   "un"
 ])
+
+export type SupplyUnit = (typeof supplyUnitEnum.enumValues)[number];
 
 export const userTable = pgTable("users", {
   id: uuid().$defaultFn(v7).primaryKey(),
@@ -133,8 +139,8 @@ export const suppliesTable = pgTable("supplies", {
   name: varchar({ length: 150 }).notNull(),
   category: supplyCategoryEnum().notNull(),
   unit: supplyUnitEnum().notNull(),
-  min_stock: numeric({ precision: 10, scale: 2 }).notNull().default("0.00"),
-  average_cost: numeric({ precision: 14, scale: 4 }).notNull().default("0.00"),
+  min_stock: numeric({ precision: 10, scale: 2, mode: "number" }).notNull().default(0),
+  average_cost: numeric({ precision: 14, scale: 4, mode: "number" }).notNull().default(0),
   active: boolean().notNull().default(true),
   created_at: timestamp().notNull().defaultNow(),
   updated_at: timestamp().notNull().defaultNow(),
@@ -149,7 +155,7 @@ export const supplyLotsTable = pgTable("supply_lots", {
     .references(() => suppliesTable.id, { onDelete: "restrict" }),
   lot_number: varchar({ length: 50 }),
   expiry_date: date(),
-  balance: numeric({ precision: 10, scale: 2 }).notNull().default("0.00"),
+  balance: numeric({ precision: 10, scale: 2, mode: "number" }).notNull().default(0),
   created_at: timestamp().notNull().defaultNow(),
   updated_at: timestamp().notNull().defaultNow(),
 }, (t) => [
@@ -166,9 +172,9 @@ export const stockMovementsTable = pgTable("stock_movements", {
     .notNull()
     .references(() => userTable.id, { onDelete: "restrict" }),
   type: stockMovementTypeEnum().notNull(),
-  quantity: numeric({ precision: 10, scale: 2 }).notNull(),
-  resulting_balance: numeric({ precision: 10, scale: 2 }).notNull(),
-  unit_cost: numeric({ precision: 14, scale: 4 }).notNull(),
+  quantity: numeric({ precision: 10, scale: 2, mode: "number" }).notNull(),
+  resulting_balance: numeric({ precision: 10, scale: 2, mode: "number" }).notNull(),
+  unit_cost: numeric({ precision: 14, scale: 4, mode: "number" }).notNull(),
   movement_date: date().notNull().defaultNow(),
   created_at: timestamp().notNull().defaultNow(),
   reason: varchar({ length: 255 }),
