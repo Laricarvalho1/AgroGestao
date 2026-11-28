@@ -1,5 +1,5 @@
-import { db } from "./db";
-import { desc, eq } from "drizzle-orm";
+import { db, Executor } from "./db";
+import { desc, eq, ilike, and, sql, DrizzleQueryError } from "drizzle-orm";
 
 import * as schema from "./schema";
 import { UserDatabaseRow } from "@/modules/users/user.entity";
@@ -9,6 +9,8 @@ import { CloseServiceOrderDTO } from "@/modules/service-orders/close-service-ord
 import { FinancialEntryDatabaseRow } from "@/modules/financial/financial-entry.entity";
 import { CreateFinancialEntryDTO } from "@/modules/financial/financial-entry.dto";
 import { CreateHarvestRecordDTO } from "@/modules/harvest-records/create-harvest-record.dto";
+import { SupplyCategory } from "./schema";
+import { CreateSupplyInput, SupplyItem, toSupplyItem, UpdateSupplyInput } from "@/modules/supplies/supply";
 
 export async function createUser(
   user: RegisterUserDTO,
@@ -228,4 +230,118 @@ export async function getFinancialEntriesForDRE(filters: {
     }
     return true;
   });
+}
+export type ListSupplyFilters = {
+  search?: string;
+  category?: SupplyCategory;
+  includeInactive?: boolean;
+}
+
+export async function supplyHasMovements(exec: Executor, supplyId: string): Promise<boolean> {
+  const [movement] = await exec
+    .select({ id: schema.stockMovementsTable.id })
+    .from(schema.stockMovementsTable)
+    .innerJoin(schema.supplyLotsTable, eq(schema.supplyLotsTable.id, schema.stockMovementsTable.lot_id))
+    .where(eq(schema.supplyLotsTable.supply_id, supplyId))
+    .limit(1);
+  return movement !== undefined;
+}
+
+export type UpdateSupplyErrorCode = "NOT_FOUND" | "SUPPLY_LOCKED" | "DUPLICATE";
+
+export class UpdateSupplyError extends Error {
+  constructor(readonly code: UpdateSupplyErrorCode) {
+    super(code);
+  }
+}
+
+function isUniqueViolation(err: unknown): boolean {
+  return err instanceof DrizzleQueryError && (err.cause as { code?: string } | undefined)?.code === "23505";
+}
+
+export async function updateSupply(id: string, changes: UpdateSupplyInput): Promise<{ ok: true, value: SupplyItem } | { ok: false, code: UpdateSupplyErrorCode }> {
+  try {
+    const value = await db.transaction(async (tx) => {
+    const [current] = await tx.select().from(schema.suppliesTable)
+      .where(eq(schema.suppliesTable.id, id)).for("update");
+    if (!current) throw new UpdateSupplyError("NOT_FOUND");
+    const changesLocked =
+      (changes.unit !== undefined && changes.unit !== current.unit) ||
+      (changes.category !== undefined && changes.category !== current.category);
+    if (changesLocked && (await supplyHasMovements(tx, id))) throw new UpdateSupplyError("SUPPLY_LOCKED");
+    const [updated] = await tx.update(schema.suppliesTable)
+      .set({
+        name: changes.name,
+        category: changes.category,
+        unit: changes.unit,
+        min_stock: changes.min_stock,
+        active: changes.active,
+        updated_at: new Date(),
+      })
+      .where(eq(schema.suppliesTable.id, id))
+      .returning();
+    return toSupplyItem(updated, await getSupplyBalance(tx, id));
+    });
+
+    return { ok: true, value }
+  } catch (err) {
+    if (err instanceof UpdateSupplyError) return { ok: false, code: err.code };
+    if (isUniqueViolation(err)) return { ok: false, code: "DUPLICATE" };
+    throw err;
+
+  }
+}
+
+
+
+const lotBalanceSum = sql<number>`coalesce(sum(${schema.supplyLotsTable.balance}), 0)`.mapWith(Number);
+
+export async function listSupplies(filters: ListSupplyFilters): Promise<SupplyItem[]> {
+  const rows = await db
+    .select({ supply: schema.suppliesTable, balance: lotBalanceSum })
+    .from(schema.suppliesTable)
+    .leftJoin(schema.supplyLotsTable, eq(schema.supplyLotsTable.supply_id, schema.suppliesTable.id))
+    .where(
+      and(
+        filters.includeInactive ? undefined : eq(schema.suppliesTable.active, true),
+        filters.search ? ilike(schema.suppliesTable.name, `%${filters.search}%`) : undefined,
+        filters.category ? eq(schema.suppliesTable.category, filters.category) : undefined,
+      ),
+    )
+    .groupBy(schema.suppliesTable.id)
+    .orderBy(schema.suppliesTable.name);
+  return rows.map((row) => toSupplyItem(row.supply, row.balance));
+}
+
+export async function getSupplyBalance(exec: Executor, supplyId: string): Promise<number> {
+  const [row] = await exec
+    .select({ balance: lotBalanceSum })
+    .from(schema.supplyLotsTable)
+    .where(eq(schema.supplyLotsTable.supply_id, supplyId));
+  return row.balance;
+}
+
+
+
+
+export type CreateSupplyErrorCode = "DUPLICATE";
+
+export async function createSupply(
+  input: CreateSupplyInput,
+): Promise<{ ok: true; value: SupplyItem } | { ok: false; code: CreateSupplyErrorCode }> {
+  try {
+    const [created] = await db
+      .insert(schema.suppliesTable)
+      .values({
+        name: input.name,
+        category: input.category,
+        unit: input.unit,
+        min_stock: input.min_stock,
+      })
+      .returning();
+    return { ok: true, value: toSupplyItem(created, 0) };
+  } catch (err) {
+    if (isUniqueViolation(err)) return { ok: false, code: "DUPLICATE" };
+    throw err;
+  }
 }
