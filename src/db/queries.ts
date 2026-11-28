@@ -8,6 +8,7 @@ import { ServiceOrderDatabaseRow } from "@/modules/service-orders/service-order.
 import { CloseServiceOrderDTO } from "@/modules/service-orders/close-service-order.dto";
 import { FinancialEntryDatabaseRow } from "@/modules/financial/financial-entry.entity";
 import { CreateFinancialEntryDTO } from "@/modules/financial/financial-entry.dto";
+import { CreateHarvestRecordDTO } from "@/modules/harvest-records/create-harvest-record.dto";
 import { SupplyCategory } from "./schema";
 import { CreateSupplyInput, SupplyItem, toSupplyItem, UpdateSupplyInput } from "@/modules/supplies/supply";
 
@@ -154,6 +155,82 @@ export async function deleteFinancialEntry(id: string): Promise<boolean> {
   return deleted.length > 0;
 }
 
+// 1-Registrar Apontamento de Colheita e calcular rendimento (UC07)
+export async function createHarvestRecord(dto: CreateHarvestRecordDTO) {
+  return await db.transaction(async (tx) => {
+    // Busca a safra para validar se está em andamento
+    const harvest = (
+      await tx
+        .select()
+        .from(schema.harvestsTable)
+        .where(eq(schema.harvestsTable.id, dto.harvest_id))
+    )[0];
+
+    if (!harvest) throw new Error("HARVEST_NOT_FOUND");
+    if (harvest.status !== "Em Andamento" && harvest.status !== "IN_PROGRESS") {
+      throw new Error("HARVEST_NOT_ACTIVE");
+    }
+
+    // Insere o novo apontamento de colheita
+    const newRecord = (
+      await tx
+        .insert(schema.harvestRecordsTable)
+        .values({
+          harvest_id: dto.harvest_id,
+          volume_harvested: dto.volume_harvested.toFixed(2),
+          unit: dto.unit,
+          weighing_ticket: dto.weighing_ticket,
+          storage_destination: dto.storage_destination,
+          harvest_date: dto.harvest_date ?? new Date(),
+        })
+        .returning()
+    )[0];
+
+    //busca todos os apontamentos daquela safra para calcular o acumulado
+    const allRecords = await tx
+      .select()
+      .from(schema.harvestRecordsTable)
+      .where(eq(schema.harvestRecordsTable.harvest_id, dto.harvest_id));
+
+    const totalHarvested = allRecords.reduce(
+      (acc, item) => acc + Number(item.volume_harvested),
+      0
+    );
+
+    return {
+      record: newRecord,
+      accumulated_volume: totalHarvested,
+    };
+  });
+}
+
+// 2-Listar lançamentos financeiros filtrados para o DRE (UC12)
+export async function getFinancialEntriesForDRE(filters: {
+  property_id: string;
+  harvest_id?: string;
+  start_date?: Date;
+  end_date?: Date;
+}) {
+  const entries = await db
+    .select()
+    .from(schema.financialEntriesTable)
+    .where(eq(schema.financialEntriesTable.property_id, filters.property_id))
+    .orderBy(desc(schema.financialEntriesTable.entry_date));
+
+  //filtra em memória por safra e janela de datas (caso informados)
+  return entries.filter((entry) => {
+    if (filters.harvest_id && entry.harvest_id !== filters.harvest_id) {
+      return false;
+    }
+    if (filters.start_date && entry.entry_date < filters.start_date) {
+      return false;
+    }
+    if (filters.end_date && entry.entry_date > filters.end_date) {
+      return false;
+    }
+    return true;
+  });
+}
 export type ListSupplyFilters = {
   search?: string;
   category?: SupplyCategory;
