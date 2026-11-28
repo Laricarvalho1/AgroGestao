@@ -22,3 +22,19 @@ export async function requireAdmin(): Promise<AuthPayload | null> {
     return null;
   }
 }
+
+
+export async function getAuth(): Promise<AuthPayload | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("auth-token")?.value;
+  if (!token) return null;
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET!) as AuthPayload;
+  } catch {
+    return null
+  }
+}
+
+export function hasRole(role: UserRole, ...allowedRoles: [UserRole, ...UserRole[]]): boolean {
+  return allowedRoles.includes(role)
+}
