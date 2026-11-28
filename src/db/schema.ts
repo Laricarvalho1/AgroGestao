@@ -102,3 +102,17 @@ export const financialEntriesTable = pgTable("financial_entries", {
   created_at: timestamp().notNull().defaultNow(),
   updated_at: timestamp().notNull().defaultNow(),
 });
+
+export const harvestRecordsTable = pgTable("harvest_records", {
+  id: uuid().$defaultFn(v7).primaryKey(),
+  harvest_id: uuid()
+    .notNull()
+    .references(() => harvestsTable.id, { onDelete: "restrict" }),
+  volume_harvested: numeric({ precision: 10, scale: 2 }).notNull(),
+  unit: varchar({ length: 20 }).notNull(), // 'sc' ou 't'
+  weighing_ticket: varchar({ length: 100 }).notNull().unique(),
+  storage_destination: varchar({ length: 150 }).notNull(),
+  harvest_date: timestamp().notNull().defaultNow(),
+  created_at: timestamp().notNull().defaultNow(),
+  updated_at: timestamp().notNull().defaultNow(),
+});
